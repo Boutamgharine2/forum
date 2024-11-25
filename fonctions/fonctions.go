@@ -29,11 +29,19 @@ func Homhandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("errrrrrrrrrrrrrrrrrrrrrrrrrra!")
 		return
 	}
-	
 }
 
-func RegisterHandl(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := (template.ParseFiles("template/register.html"))
+func Resulfunc(w http.ResponseWriter, r *http.Request) {
+	// type Message struct {
+	// 	message string
+	// }
+	var Message string
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed!", http.StatusMethodNotAllowed)
+		return
+	}
+	tmpl, err := (template.ParseFiles("template/result.html"))
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -41,30 +49,89 @@ func RegisterHandl(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	email := r.Form.Get("email")
 	username := r.Form.Get("username")
-	password := r.Form.Get("password")
+	password := r.Form.Get("mypassword")
 	confpassword := r.Form.Get("confirmation")
+
 	if password != confpassword {
-		fmt.Println("les mots de passe sont pas corespondant!")
+		Message="les mots de passe sont pas identiques !"
+		tmpl.Execute(w, Message)
 		return
+
 	}
 
 	db, err := sql.Open("sqlite3", "./mydatabase.db")
 	if err != nil {
+		fmt.Println("hiiii")
 		log.Fatal(err)
 	}
 	defer db.Close()
 	v, err := (emailExiste(db, email))
 	if v && err == nil {
-		http.Error(w, "deja exist", http.StatusMethodNotAllowed)
+		Message="l'email que tu utuluser est deja exist!"
+		tmpl.Execute(w, Message)
+
+		return
+	}
+
+	if email != "" && username != "" && password != "" {
+		err0 := inseredata(db, email, username, password)
+		if err0 != nil {
+			Message="l'operation est echoe"
+			tmpl.Execute(w, Message)
+
+			return
+		}
+		tmpl.Execute(w, "toust est bien!!")
 		return
 
 	}
-	err0 := inseredata(db, email, username, password)
-	if err0 != nil {
-		fmt.Println(err0)
+	tmpl.Execute(w, "quelque chose n'est pas correct!")
+}
+
+func RegisterHandl(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed!", http.StatusMethodNotAllowed)
 		return
 	}
-	supprimerUtilisateur(db,1)
+
+	tmpl, err := (template.ParseFiles("template/register.html"))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	r.ParseForm()
+
+	// 	email := r.Form.Get("email")
+	// 	username := r.Form.Get("username")
+	// 	password := r.Form.Get("password")
+	// 	confpassword := r.Form.Get("confirmation")
+
+	// 	if password != confpassword {
+	// 		fmt.Println("les mots de passe sont pas corespondant!")
+	// 		return
+	// 	}
+
+	// 	db, err := sql.Open("sqlite3", "./mydatabase.db")
+	// 	if err != nil {
+	// 		fmt.Println("hiiii")
+	// 		log.Fatal(err)
+	// 	}
+	// 	defer db.Close()
+	// 	v, err := (emailExiste(db, email))
+	// 	if v && err == nil {
+	// 		http.Error(w, "deja exist", http.StatusMethodNotAllowed)
+	// 		return
+	// 	}
+
+	// 	if email!= "" && username != "" &&password != "" {
+	// 	err0 := inseredata(db, email, username, password)
+	// 	if err0 != nil {
+	// 		fmt.Println(err0)
+	// 		return
+	// 	}
+	// }
+
+	// supprimerUtilisateur(db, 1)
 	tmpl.Execute(w, 0)
 }
 
