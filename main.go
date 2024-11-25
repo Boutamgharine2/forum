@@ -13,8 +13,10 @@ import (
 func main() {
 	http.HandleFunc("/", forum.Homhandler)
 	http.HandleFunc("/register", forum.RegisterHandl)
-	http.HandleFunc("/resultat",forum.Resulfunc)
-	//forum.CreateDatabase()
+	http.HandleFunc("/resultat", forum.Resulfunc)
+	http.Handle("/style/", http.StripPrefix("/style", http.FileServer(http.Dir("style"))))
+
+	// forum.CreateDatabase()
 	fmt.Println("Server starting on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
