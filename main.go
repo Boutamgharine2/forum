@@ -7,13 +7,15 @@ import (
 
 	forum "forum/fonctions"
 
-	_ "github.com/mattn/go-sqlite3"
+	_  "github.com/mattn/go-sqlite3"
 )
 
 func main() {
-	http.HandleFunc("/", forum.Homhandler)
+	http.HandleFunc("/", forum.HomeHandler)
 	http.HandleFunc("/register", forum.RegisterHandl)
 	http.HandleFunc("/resultat", forum.Resulfunc)
+	http.HandleFunc("/login", forum.Loginhandler)
+
 	http.Handle("/style/", http.StripPrefix("/style", http.FileServer(http.Dir("style"))))
 
 	// forum.CreateDatabase()

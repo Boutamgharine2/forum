@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"os"
 	"text/template"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-func Homhandler(w http.ResponseWriter, r *http.Request) {
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		// ErrorHandler(w, r, http.StatusNotFound, "page Not found")
-		//	fmt.Println("hiii")
 		return
 	}
 	if r.Method != http.MethodGet {
@@ -31,10 +31,23 @@ func Homhandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func Loginhandler(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed!", http.StatusMethodNotAllowed)
+		return
+	}
+	tmpl, err := (template.ParseFiles("template/Login.html"))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	r.ParseForm()
+	tmpl.Execute(w,0)
+
+
+}
 func Resulfunc(w http.ResponseWriter, r *http.Request) {
-	// type Message struct {
-	// 	message string
-	// }
 	var Message string
 
 	if r.Method != http.MethodPost {
@@ -53,39 +66,42 @@ func Resulfunc(w http.ResponseWriter, r *http.Request) {
 	confpassword := r.Form.Get("confirmation")
 
 	if password != confpassword {
-		Message="les mots de passe sont pas identiques !"
+		Message = "the passwords are not the same!"
 		tmpl.Execute(w, Message)
 		return
 
 	}
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	db, err := sql.Open("sqlite3", "./mydatabase.db")
 	if err != nil {
-		fmt.Println("hiiii")
-		log.Fatal(err)
+		Message = "Internal server error!"
+		tmpl.Execute(w, Message)
+		return
+
 	}
 	defer db.Close()
 	v, err := (emailExiste(db, email))
 	if v && err == nil {
-		Message="l'email que tu utuluser est deja exist!"
+		Message = "The email you are using already exists!"
 		tmpl.Execute(w, Message)
 
 		return
 	}
 
-	if email != "" && username != "" && password != "" {
-		err0 := inseredata(db, email, username, password)
+	if email != "" && username != "" && string(hashedPassword) != "" {
+		err0 := inseredata(db, email, username, string(hashedPassword))
 		if err0 != nil {
-			Message="l'operation est echoe"
+			Message = "the operation failed!"
 			tmpl.Execute(w, Message)
 
 			return
 		}
-		tmpl.Execute(w, "toust est bien!!")
+		tmpl.Execute(w, "your operation is successful")
 		return
 
 	}
-	tmpl.Execute(w, "quelque chose n'est pas correct!")
+	tmpl.Execute(w, "something is not right!")
 }
 
 func RegisterHandl(w http.ResponseWriter, r *http.Request) {
@@ -101,37 +117,6 @@ func RegisterHandl(w http.ResponseWriter, r *http.Request) {
 	}
 	r.ParseForm()
 
-	// 	email := r.Form.Get("email")
-	// 	username := r.Form.Get("username")
-	// 	password := r.Form.Get("password")
-	// 	confpassword := r.Form.Get("confirmation")
-
-	// 	if password != confpassword {
-	// 		fmt.Println("les mots de passe sont pas corespondant!")
-	// 		return
-	// 	}
-
-	// 	db, err := sql.Open("sqlite3", "./mydatabase.db")
-	// 	if err != nil {
-	// 		fmt.Println("hiiii")
-	// 		log.Fatal(err)
-	// 	}
-	// 	defer db.Close()
-	// 	v, err := (emailExiste(db, email))
-	// 	if v && err == nil {
-	// 		http.Error(w, "deja exist", http.StatusMethodNotAllowed)
-	// 		return
-	// 	}
-
-	// 	if email!= "" && username != "" &&password != "" {
-	// 	err0 := inseredata(db, email, username, password)
-	// 	if err0 != nil {
-	// 		fmt.Println(err0)
-	// 		return
-	// 	}
-	// }
-
-	// supprimerUtilisateur(db, 1)
 	tmpl.Execute(w, 0)
 }
 
@@ -181,5 +166,5 @@ func CreateDatabase() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Base de données et tables créées avec succès.")
+	fmt.Println("Database and tables created successfully.")
 }
