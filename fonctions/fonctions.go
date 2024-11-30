@@ -32,7 +32,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func Loginhandler(w http.ResponseWriter, r *http.Request) {
-
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed!", http.StatusMethodNotAllowed)
 		return
@@ -43,10 +42,9 @@ func Loginhandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.ParseForm()
-	tmpl.Execute(w,0)
-
-
+	tmpl.Execute(w, 0)
 }
+
 func Resulfunc(w http.ResponseWriter, r *http.Request) {
 	var Message string
 
@@ -71,7 +69,6 @@ func Resulfunc(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	db, err := sql.Open("sqlite3", "./mydatabase.db")
 	if err != nil {
@@ -81,13 +78,14 @@ func Resulfunc(w http.ResponseWriter, r *http.Request) {
 
 	}
 	defer db.Close()
-	v, err := (emailExiste(db, email))
+	v, err := (EmailOrUsernameExiste(db, email, username))
 	if v && err == nil {
-		Message = "The email you are using already exists!"
+		Message = "The email or username you are using already exists!"
 		tmpl.Execute(w, Message)
 
 		return
 	}
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
 	if email != "" && username != "" && string(hashedPassword) != "" {
 		err0 := inseredata(db, email, username, string(hashedPassword))
@@ -102,6 +100,25 @@ func Resulfunc(w http.ResponseWriter, r *http.Request) {
 
 	}
 	tmpl.Execute(w, "something is not right!")
+}
+
+func ResultaLogin(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "methode notAlowed", http.StatusMethodNotAllowed)
+		return
+
+	}
+	tmpl, err := template.ParseFiles("./template/resultalogin.html")
+	if err != nil {
+		http.Error(w, "Internal server Error!", http.StatusInternalServerError)
+		return
+	}
+	r.ParseForm()
+	email := r.Form.Get("email0")
+
+	password := r.Form.Get("mypassword0")
+	fmt.Println(email, password)
+	tmpl.Execute(w, "hi")
 }
 
 func RegisterHandl(w http.ResponseWriter, r *http.Request) {
@@ -134,11 +151,11 @@ func inseredata(db *sql.DB, email, username, password string) error {
 	return err
 }
 
-func emailExiste(db *sql.DB, email string) (bool, error) {
-	query := "SELECT COUNT(*) FROM users WHERE email = ?"
+func EmailOrUsernameExiste(db *sql.DB, email, username string) (bool, error) {
+	query := "SELECT COUNT(*) FROM users WHERE email = ? OR username = ?"
 
 	var count int
-	err := db.QueryRow(query, email).Scan(&count)
+	err := db.QueryRow(query, email, username).Scan(&count)
 	if err != nil {
 		return false, err
 	}
